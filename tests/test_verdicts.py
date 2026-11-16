@@ -61,6 +61,12 @@ def test_verdikt_exp2_schwelle_wald_p_ist_0_05():
     assert "erkennen beide Tests den Effekt" in ev.verdict_exp2(_res2(pw=0.05))[1]
 
 
+def test_verdikt_exp2_sagt_vollstaendig_nur_bei_vollstaendiger_trennung():
+    assert "obwohl die Daten vollständig trennen" in ev.verdict_exp2(_res2())[1]
+    text = ev.verdict_exp2(_res2(art="quasi"))[1]
+    assert "quasi getrennt" in text and "obwohl die Daten trennen." in text and "vollständig trennen" not in text and "vollkommen" not in text
+
+
 def test_verdikt_exp2_regel_greift_nicht_und_ueberlappung():
     assert "greift in den gerechneten Schritten nicht" in ev.verdict_exp2(_res2(greift=False, regel="Koeffizientenänderung"))[1]
     assert "Die Koeffizientenregel hält" in ev.verdict_exp2(_res2(regel="Koeffizientenänderung"))[1]

@@ -52,6 +52,25 @@ def haeufigkeit(noise: float, n: int, reps: int, seed: int = H_SEED, stream: int
     return {"noise": noise, "n": n, "reps": reps, "seed": seed, "stream": stream, "getrennt": bits.count("1"), "quasi": quasi, "nullzelle": nz, "konstant": konst, "bits": "".join(bits)}
 
 
+def nullzellen_je_gruppe(noise: float, n: int, reps: int, seed: int = H_SEED, stream: int = H_STREAM) -> dict:
+    """Welche Einzelgruppe ist die Nullzelle? Dieselben Stichproben wie `haeufigkeit` (gleicher Zufalls-Seed, gleicher Strom), nur die getrennten werden gezählt: Zahl der getrennten
+    Stichproben, Zahl mit mindestens einer Nullzelle und je Gruppe die Zahl der Stichproben, in denen sie Nullzelle ist (Mehrfachnennung möglich). Nicht in `data/lsp_frozen.json`;
+    der Test rechnet die Zählung neu (Dauer unter 5 s für 300 Stichproben mit n = 100)."""
+    je, getrennt, mit = {}, 0, 0
+    for k in range(reps):
+        st = S.ziehe(n, seed + k, noise, stream)
+        X = st.X()
+        Xk = X[:, P.voller_rang(X)]
+        if P.lp_optimum(Xk, st.y) <= C.LP_SCHWELLE:
+            continue
+        getrennt += 1
+        zellen = P.nullzellen(st.art, st.zoll, st.we, st.y)
+        mit += bool(zellen)
+        for name, _anzahl, _standgeld in zellen:
+            je[name] = je.get(name, 0) + 1
+    return {"noise": noise, "n": n, "reps": reps, "getrennt": getrennt, "mit_nullzelle": mit, "je_gruppe": je}
+
+
 def lp_luecke(reps: int = 150) -> dict:
     """Optimalwerte des Rezessions-LP über n = 100 und 200, beide Streuungen: kleinster Wert der getrennten, größter Betrag der nicht getrennten Stichproben."""
     pos, nul = [], []

@@ -1,6 +1,6 @@
 """Trennung: Prüfung per Rezessions-Linearprogramm, vollständig gegen quasi, Cover-Formel und Zählung der Zellen.
 
-Begriffe (nach Kosmidis und Firth 2019, Abschn. 1): mit s_i = 2 y_i - 1 heißen die Daten *vollständig getrennt*, wenn ein β mit s_i x_i'β > 0 für alle i existiert,
+Begriffe (nach Kosmidis und Firth, Abschn. 1): mit s_i = 2 y_i - 1 heißen die Daten *vollständig getrennt*, wenn ein β mit s_i x_i'β > 0 für alle i existiert,
 *quasi-vollständig getrennt*, wenn nur „≥“ gilt und für mindestens einen Punkt Gleichheit, sonst *überlappend*. Bei vollständiger oder quasi-vollständiger Trennung hat der
 ML-Schätzer des Logit keinen endlichen Wert (Albert und Anderson 1984, hier nur über Kosmidis/Firth bekannt).
 Prüfung hier: Linearprogramm „maximiere Σ s_i x_i'd unter s_i x_i'd ≥ 0, -1 ≤ d_j ≤ 1“; ein Optimum über LP_SCHWELLE heißt: es gibt eine Richtung d, in der die

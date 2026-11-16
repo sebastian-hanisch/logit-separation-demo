@@ -141,7 +141,7 @@ def verdict_exp2(res: dict) -> tuple[str, str]:
     teile = [f"Die Daten sind {res['art']} getrennt (Rezessions-LP: Optimum {de(res['lp_opt'], 1)}): der ML-Schätzer existiert nicht, jeder angezeigte Wert ist ein Abbruchwert.",
              f"{wo} bei Schritt {k}{ohne} mit β₁ = {de(b1, 2)}; nach {res['steps']} Schritten wäre es β₁ = {de(res['pfad'][-1, 1], 2)}.",
              f"Dort steht der Wald-Test bei z = {de(z, 4)} (p = {de(pw, 2)}), der Likelihood-Quotient bei {de(lq, 2)} (p = {de(plq, 4)}): "
-             + ("der Wald-Test findet keinen Effekt, obwohl die Daten vollkommen trennen." if pw > 0.05 else "hier erkennen beide Tests den Effekt; mit mehr Schritten sinkt z des Wald-Tests wieder.")]
+             + ("der Wald-Test findet keinen Effekt, obwohl die Daten " + ("vollständig " if res["art"] == "vollständig" else "") + "trennen." if pw > 0.05 else "hier erkennen beide Tests den Effekt; mit mehr Schritten sinkt z des Wald-Tests wieder.")]
     if res["formel_zuwachs"] is not None and len(res["zuwachs"]) > 30:
         teile.append(f"Der Zuwachs von β₁ je Schritt beträgt im Mittel der Schritte 31 bis {len(res['zuwachs'])} {de(float(np.mean(res['zuwachs'][30:])), 4)}; die Formel 1/min|x| nennt {de(res['formel_zuwachs'], 4)} "
                      "(gilt nur für symmetrische Daten mit zwei Stützpunkten).")

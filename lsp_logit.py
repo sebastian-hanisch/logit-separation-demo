@@ -138,7 +138,7 @@ def abbruch_schritt(pfad, dev, regel: str):
     return ende, False
 
 
-def irls_gekappt(X, y, maxit: int = 25, eps: float = C.DEV_RULE_EPS):
+def irls_gekappt(X, y, maxit: int = C.GAENGIG_MAX_SCHRITTE, eps: float = C.DEV_RULE_EPS):
     """Nachbau einer gängigen Programmregel: Wahrscheinlichkeiten aus |η| ≤ 30 gekappt, Abbruch nach |ΔD| / (|D| + 0,1) < eps, höchstens maxit Schritte.
     Aus dem Gedächtnis nachgebaut, nicht gegen eine bestimmte Software geprüft. Rückgabe (β, Schritte, regulär abgebrochen)."""
     p = X.shape[1]
@@ -182,8 +182,10 @@ def firth_score(X, y, b):
     return X.T @ (y - pr + h * (0.5 - pr)), inv
 
 
-def firth(X, y, maxit: int = 300, tol: float = 1e-9):
-    """Firth-Schätzer: Newton auf der gestraften Log-Likelihood ℓ + ½ log|X'WX| mit Schrittweitenhalbierung. Rückgabe (β, Schritte, konvergiert)."""
+def firth(X, y, maxit: int = C.FIRTH_MAX_SCHRITTE, tol: float = C.FIRTH_TOL):
+    """Firth-Schätzer: Newton auf der gestraften Log-Likelihood ℓ + ½ log|X'WX| mit Schrittweitenhalbierung. Start β = 0; die größte Schrittkomponente wird auf höchstens
+    C.FIRTH_SCHRITT_MAX (5) zurückgeschnitten, je Schritt höchstens C.FIRTH_HALBIERUNGEN (40) Halbierungen, Abbruch bei größter Schrittänderung unter tol (1e-9), höchstens
+    maxit (300) Schritte. Rückgabe (β, Schritte, konvergiert)."""
     p = X.shape[1]
     b = np.zeros(p)
     cur = gestrafte_ll(X, y, b)
@@ -191,10 +193,10 @@ def firth(X, y, maxit: int = 300, tol: float = 1e-9):
         u, inv = firth_score(X, y, b)
         step = inv @ u
         mx = float(np.max(np.abs(step)))
-        if mx > 5.0:
-            step = step * 5.0 / mx
+        if mx > C.FIRTH_SCHRITT_MAX:
+            step = step * C.FIRTH_SCHRITT_MAX / mx
         k = 0
-        while gestrafte_ll(X, y, b + step) < cur - 1e-12 and k < 40:
+        while gestrafte_ll(X, y, b + step) < cur - 1e-12 and k < C.FIRTH_HALBIERUNGEN:
             step = step / 2.0
             k += 1
         b = b + step
@@ -205,7 +207,8 @@ def firth(X, y, maxit: int = 300, tol: float = 1e-9):
 
 
 def ridge(X, y, lam: float, maxit: int = 100, tol: float = 1e-10):
-    """Gestraftes Logit (Strafe ½ λ Σ β_j² ohne Achsenabschnitt) auf standardisierten Spalten; Koeffizienten in der Skala der Originalspalten."""
+    """Gestraftes Logit (Strafe ½ λ Σ β_j² ohne Achsenabschnitt, die Log-Likelihood geht als Summe ein, nicht als Mittel) auf standardisierten Spalten: alle Spalten außer dem
+    Achsenabschnitt mit Mittel und Standardabweichung der Stichprobe (Nenner n); Koeffizienten in der Skala der Originalspalten. Höchstens maxit (100) Newton-Schritte."""
     mu, sd = X[:, 1:].mean(axis=0), X[:, 1:].std(axis=0)
     sd = np.where(sd > 0, sd, 1.0)
     Z = np.column_stack([np.ones(len(y)), (X[:, 1:] - mu) / sd])
@@ -217,7 +220,8 @@ def ridge(X, y, lam: float, maxit: int = 100, tol: float = 1e-10):
 
 
 def streichen(X, y):
-    """Die Spalte mit dem größten |β| (ohne Achsenabschnitt) beim Abbruch der gängigen Regel streichen, dann dieselbe Regel; die gestrichene Spalte bekommt den Koeffizienten 0."""
+    """Genau eine Spalte, die mit dem größten |β| (ohne Achsenabschnitt) beim Abbruch der gängigen Regel, streichen (die Spalten Export, Umschlag und Leer zählen einzeln), dann dieselbe Regel;
+    die gestrichene Spalte bekommt den Koeffizienten 0."""
     b, _, _ = irls_gekappt(X, y)
     j = int(np.argmax(np.abs(b[1:]))) + 1
     b2, _, _ = irls_gekappt(np.delete(X, j, axis=1), y)

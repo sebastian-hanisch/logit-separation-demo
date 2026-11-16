@@ -10,9 +10,9 @@ dazu kommen Handbeispiele mit gesetzten Zahlen, die sich von Hand in Brüchen na
 
 ## Warum dieses Problem
 
-Eine Gerade auf Standgeld ja/nein sagt für 15,5 % der Testcontainer einen Wert unter 0 oder über 1 voraus; also passt man ein Logit an, per IRLS, und beim Logit ist das ein Newton-Verfahren. Dann geschieht etwas, das bei stetigen
-Ausgängen nicht vorkommt: Gibt es in der Stichprobe eine Containerart ohne ein einziges Standgeld (im Strom dieser Demo kommt das bei Umschlag mit einer wahren Rate von 3,3 % vor: bei n = 100 haben 147 von 151 getrennten Stichproben eine Gruppe (eine der vier Arten, Zollhalt 1 oder Wochenende 1), in der alle gleich ausgehen), so wächst der Koeffizient mit jedem Schritt weiter,
-die Software meldet trotzdem Zahlen, und der Wald-Test sagt „kein Effekt“, obwohl die Daten vollkommen trennen. Die Demo zeigt das an sechs Punkten, misst, wie oft es im Container-Strom vorkommt (bei n = 100 in 151 von 300 und in 136 von 300 Stichproben aus zwei Zufallsströmen)
+Eine Gerade auf Standgeld ja/nein sagt für 15,5 % der Testcontainer einen Wert unter 0 oder über 1 voraus (n = 3000 Container je Stichprobe; bei n = 100 sind es 16,7 %); also passt man ein Logit an, per IRLS, und beim Logit ist das ein Newton-Verfahren. Dann geschieht etwas, das bei stetigen
+Ausgängen nicht vorkommt: Gibt es in der Stichprobe eine Gruppe (eine der vier Arten, Zollhalt 1 oder Wochenende 1), in der alle gleich ausgehen, etwa eine Containerart ohne ein einziges Standgeld (im Strom dieser Demo kommt das vor allem bei Umschlag mit einer wahren Rate von 3,3 % vor: bei n = 100 haben 147 von 151 getrennten Stichproben eine solche Gruppe, bei Umschlag 138), so wächst der Koeffizient in den Beispielen der Demo mit jedem Schritt weiter,
+das Verfahren rechnet trotzdem weiter und gibt irgendwann Zahlen aus, weil eine Abbruchregel anhält (scikit-learn 1.9.1 meldete in der einen gemessenen Einstellung dazu keine Konvergenzwarnung), und der Wald-Test sagt „kein Effekt“, obwohl die Daten trennen (an den sechs Punkten vollständig; im Container-Strom ab n = 100 nur quasi). Die Demo zeigt das an sechs Punkten, misst, wie oft es im Container-Strom vorkommt (bei n = 100 in 151 von 300 und in 136 von 300 Stichproben aus zwei Zufallsströmen)
 und was bei getrennten Stichproben hilft. Nichts davon ist wissenschaftlich neu: Trennung ist Lehrbuchstoff; neu ist nur die Vorführbarkeit mit Zähleinheiten.
 
 ## Modell
@@ -21,7 +21,7 @@ und was bei getrennten Stichproben hilft. Nichts davon ist wissenschaftlich neu:
   inklusive Achsenabschnitt (in ISLR2 zählt p die Merkmale ohne Achsenabschnitt).
 - **Logit:** p_i = 1 / (1 + e^(−η_i)), η = Xβ; Log-Likelihood ℓ(β) = Σ [y_i η_i − log(1 + e^(η_i))]; Gewicht w_i = p_i (1 − p_i); IRLS-Schritt β⁺ = β + (X'WX)⁻¹ X'(y − p). Beim kanonischen Link ist das der Newton-Schritt (die zweite Ableitung enthält y nicht).
   Gerechnet wird mit stabilen Formeln (w = σ(η) σ(−η), Residuum y σ(−η) − (1 − y) σ(η)), ohne Kappung und ohne Schrittweitenhalbierung.
-- **Trennung** (Begriffe nach Kosmidis und Firth 2019): *vollständig*, wenn ein β mit s_i x_i'β > 0 für alle i existiert (s_i = 2y_i − 1); *quasi-vollständig*, wenn nur „≥“ gilt und für mindestens einen Punkt Gleichheit; sonst *überlappend*. Prüfung hier als
+- **Trennung** (Begriffe nach Kosmidis und Firth): *vollständig*, wenn ein β mit s_i x_i'β > 0 für alle i existiert (s_i = 2y_i − 1); *quasi-vollständig*, wenn nur „≥“ gilt und für mindestens einen Punkt Gleichheit; sonst *überlappend*. Prüfung hier als
   Linearprogramm „maximiere Σ s_i x_i'd unter s_i x_i'd ≥ 0, −1 ≤ d_j ≤ 1“ (HiGHS, `scipy.optimize.linprog`); ein Optimum über 1e-9 heißt Trennung, der Schätzer existiert nicht. Die Zulässigkeitsprüfung „gibt es β mit s_i x_i'β ≥ 1“ erkennt nur die vollständige Trennung.
 - **Container-Strom:** Art Import 35 % / Export 30 % / Umschlag 25 % / Leer 10 %, zwölf Kunden mit Effekt auf die log-Verweilzeit (nicht im Modell), Zollhalt bei Import (25 %), Wochenende, Vorlauf bei Export und Umschlag; die log-Verweilzeit ist normalverteilt mit Streuung 0,55 / 0,25 / 0,35 / 0,90 je Art.
   Die wahre Wahrscheinlichkeit Φ((μ − ln 7)/s) ist bekannt, aber nicht logistisch in den Merkmalen; darum bleibt jedem Logit ein Rest („Grenze der Logit-Form“). **Alle Parameter des Stroms sind erfunden.**
@@ -33,8 +33,10 @@ und was bei getrennten Stichproben hilft. Nichts davon ist wissenschaftlich neu:
 1. **Von Hand** (neun Container, Zollhalt; acht Container, Vorlauf): IRLS-Pfad, Newton-Pfad mit numerisch abgeleiteter Hesse-Matrix, Grenzwert (geschlossene Form beim 0/1-Merkmal), Wald und Likelihood-Quotient, Gerade gegen Logit; der erste Schritt zusätzlich in Brüchen.
 2. **Trennung** (sechs Punkte, acht Punkte, Skalierung 0,5 bis 2): Pfad bis 200 Schritte, drei Abbruchregeln (Deviance-Regel |ΔD| / (|D| + 0,1) < 1e-8, feste Schrittzahl, Koeffizientenänderung < 1e-8), Wald z und Likelihood-Quotient je Schritt, Rezessions-LP.
 3. **Häufigkeit** (vorgerechnet, Zähleinheit die Stichprobe): Anteil getrennter Stichproben je n und Streuung; dazu eine frisch gezogene Stichprobe mit ihrer Nullzelle.
-4. **Was hilft** (vorgerechnet, je n bis zu 150 getrennte Stichproben): ML mit einer Regel, die Wahrscheinlichkeiten bei |η| ≤ 30 kappt und nach der Deviance-Regel abbricht (**aus dem Gedächtnis nachgebaut, nicht gegen eine bestimmte Software geprüft**), ML mit 25 stabilen Schritten,
-   Firth (Newton mit Halbierung auf ℓ + ½ log|X'WX|), Ridge mit zwei festen Stärken (λ = 0,1 und 1, Spalten standardisiert), Streichen der Spalte mit dem größten |β| beim Abbruch. **Mehrverlust** = mittlerer Log-Verlust gegen die wahre Wahrscheinlichkeit auf 100 000 Testcontainern (nur Merkmale)
+4. **Was hilft** (vorgerechnet, je n bis zu 150 getrennte Stichproben): ML mit einer Regel, die Wahrscheinlichkeiten bei |η| ≤ 30 kappt, nach der Deviance-Regel abbricht und höchstens 25 Schritte rechnet (**aus dem Gedächtnis nachgebaut, nicht gegen eine bestimmte Software geprüft**), ML mit 25 stabilen Schritten,
+   Firth (Newton mit Halbierung auf ℓ + ½ log|X'WX|; Start β = 0, die größte Schrittkomponente wird auf höchstens 5 zurückgeschnitten, je Schritt höchstens 40 Halbierungen, Abbruch bei größter Schrittänderung unter 1e-9, höchstens 300 Schritte),
+   Ridge mit zwei festen Stärken (λ = 0,1 und 1; alle Spalten außer dem Achsenabschnitt mit Mittel und Standardabweichung der Stichprobe, Nenner n, standardisiert; die Log-Likelihood geht als Summe ein, nicht als Mittel; der Achsenabschnitt bleibt unbestraft; die Koeffizienten stehen auf der Skala der Originalspalten),
+   Streichen der Spalte mit dem größten |β| beim Abbruch der Regel mit Kappung (genau eine Spalte; Export, Umschlag und Leer zählen einzeln). **Mehrverlust** = mittlerer Log-Verlust gegen die wahre Wahrscheinlichkeit auf 100 000 Testcontainern (nur Merkmale)
    minus die Entropie der wahren Wahrscheinlichkeiten, in nat. **Grenze der Logit-Form** = das Logit mit dem kleinsten erwarteten Log-Verlust gegen die wahre Wahrscheinlichkeit (IRLS mit der wahren Wahrscheinlichkeit als Ausgang auf 400 000 Merkmalssätzen).
 5. **Faustregel n ≥ 5p** (vorgerechnet): n = 1000 Container plus 0 bis 200 reine Rauschmerkmale N(0, 1); ML mit höchstens 30 Schritten.
 
@@ -68,7 +70,7 @@ geschlossener Form; Band = Neu-Rechnung mit Toleranz, siehe „Rechenregeln und 
 ### Container-Strom (vorgerechnet, mit Neu-Rechnung eines Teils als Band)
 
 **Gerade auf Standgeld** (Testmenge mit 100 000 Containern, Mittel über die Stichproben): Anteil der Testcontainer mit Vorhersage unter 0 oder über 1 bei n = 100: 16,7 % (100 Stichproben), n = 500: 15,6 % (60), n = 3000: 15,5 % (40).
-**Wahre Standgeld-Rate je Art** (Mittel über die Testmenge): Import 23,3 %, Export 25,9 %, Umschlag 3,3 %, Leer 50,5 %; insgesamt 21,8 %.
+**Wahre Standgeld-Rate je Art** (Mittel über die Testmenge): Import 23,3 %, Export 25,9 %, Umschlag 3,3 %, Leer 50,5 %; insgesamt 21,8 % (gilt für den Generator dieser Demo: jede Demo baut den Containerstrom eigenständig nach).
 
 **Wie oft trennen die Daten?** Anteil getrennter Stichproben (Rezessions-LP, vollständig oder quasi); Band = Wilson-Intervall 95 %; „Nullzelle“ = eine von sechs Einzelgruppen (eine der vier Arten, Zollhalt 1, Wochenende 1; keine Kreuzzelle) mit mindestens einem Container, in der alle gleich ausgehen:
 
@@ -87,6 +89,9 @@ Ein zweiter Zufallsstrom mit 300 anderen Stichproben bei n = 100 gab 136 von 300
 „0 von 200“ heißt nicht „kann nicht vorkommen“: der obere Rand des 95-%-Bandes liegt bei 1,9 %. Die Schwelle 1e-9 des Rezessions-LP liegt in einer Lücke: in 600 Stichproben (n = 100 und 200, beide Streuungen) ist das Optimum entweder mindestens 4,0 (365 Stichproben)
 oder null (235 Stichproben).
 
+**Welche Gruppe ist die Nullzelle?** Bei n = 100 und Standardstreuung (dieselben 300 Stichproben wie in der Tabelle, 151 getrennt, 147 davon mit Nullzelle) war die Nullzelle (Mehrfachnennung möglich) bei Umschlag in 138 getrennten Stichproben,
+bei Zollhalt 1 in 11, bei Leer in 6, bei Export in 1, bei Import und Wochenende in 0. „Vor allem Umschlag“ heißt in dieser Demo also diese Zählung; sie steht nicht in `data/lsp_frozen.json`, der Test rechnet sie neu (unter 5 s). Dass die Nullzellen bei der Art mit der kleinsten Standgeld-Rate auftreten, passt dazu, ist aber eine Deutung, keine gemessene Ursache.
+
 **Was hilft bei getrennten Stichproben?** Mehrverlust gegen die wahre Wahrscheinlichkeit (nat), Median über je 150 getrennte Stichproben (Standardstreuung); „besser als Firth in“ = Zahl der Stichproben, in denen das Verfahren einen kleineren Mehrverlust hat als Firth:
 
 | Verfahren | n = 60: Median | n = 60: besser als Firth in | n = 100: Median | n = 100: besser als Firth in |
@@ -101,7 +106,7 @@ oder null (235 Stichproben).
 Gezogen wurden 200 Stichproben (n = 60; 150 getrennt, 75,0 %) und 306 (n = 100; 150 getrennt, 49,0 %). Der Mittelwert des Mehrverlusts ist bei ML von Ausreißern bestimmt (n = 60: 7,4e+08 bei der Abbruchregel, 2,40 bei 25 Schritten, gegen Median 0,711 und 0,982): die Mediane der ML-Zeilen sind wegen des schweren Rands keine auf drei Stellen gesicherten Werte (150 getrennte Stichproben je Zelle); gesichert ist die Ordnung, ML ist in keiner der 150 Stichproben besser als Firth. Ein getrennter Koeffizient kann die Vorhersage für ganze Arten
 verderben. **Bezug ohne Trennung** (150 nicht getrennte Stichproben, n = 100): Mehrverlust im Median ML 0,062, Firth 0,057; Firth besser als ML in 107 von 150. **Grenze der Logit-Form: 0,024**; keine Methode erreicht sie, Ridge hängt an der Stärke (nur zwei feste Werte
 gemessen), „Streichen“ ist nur als Streichen der Spalte mit dem größten |β| beim Abbruch gemessen (nicht jede denkbare Streichregel).
-**Beispiel** (n = 100, erste getrennte Stichprobe ab Zufalls-Seed 1, in der App einstellbar): Umschlag 20 Container, kein Standgeld; Koeffizient der Spalte Umschlag −19,65 bei der Abbruchregel (−26,65 bei 25 Schritten), Firth −3,95, Ridge λ = 0,1 −5,50, λ = 1 −2,67, Wald z = −0,01 (p = 0,995),
+**Beispiel** (n = 100, erste getrennte Stichprobe ab Zufalls-Seed 1, in der App einstellbar): Umschlag 20 Container, kein Standgeld; Koeffizient der Spalte Umschlag −19,65 bei der Abbruchregel (−26,65 bei 25 Schritten), Firth −3,95, Ridge λ = 0,1 −5,50, λ = 1 −2,67, Wald z = −0,01 (p = 0,995; bei den Koeffizienten der Regel mit Kappung, die nach 18 Schritten über die Deviance-Regel abbricht),
 Likelihood-Quotient beim Weglassen der Spalte 8,31 (p = 0,0040). Mehrverlust in dieser Stichprobe: ML 0,161, ML mit 25 Schritten 0,219, Firth 0,039, Ridge 0,053 und 0,059, Streichen 0,101.
 
 **Gilt „n ≥ 5p“?** n = 1000 Container plus p_R reine Rauschmerkmale N(0, 1) (Wirkung null); „Streuung ÷ Standardfehler“ = Standardabweichung der Rausch-Schätzer geteilt durch den mittleren Standardfehler; Zollhalt ÷ Grenzwert = Median des Zollhalt-Koeffizienten geteilt durch den pseudowahren Wert (1,925):
@@ -117,7 +122,7 @@ Die Verhältnisse Zollhalt ÷ Grenzwert sind Mediane aus 100 bis 150 Stichproben
 quantitativ schwächer (hier 1,38 bei p/n = 0,207), andere Anordnung, nicht dieselbe Zahl.
 
 **scikit-learn** (Version 1.9.1, `LogisticRegression` mit `penalty=None`, lbfgs, Windows) auf die sechs Punkte: β₁ = 8,35 (`max_iter` 100, `tol` 1e-4), 17,36 (1000, 1e-8), 27,06 (100000, 1e-12); **keine Konvergenzwarnung** (aufgefangen wurde nur eine `FutureWarning` zum veralteten Argument `penalty`).
-Gilt für diese Version, diese Einstellungen und diese Punkte; die App rechnet scikit-learn nicht.
+Gilt für diese Version, diese Einstellungen und diese Punkte; die App rechnet scikit-learn nicht. **Messung beim Bau, nicht im Test** in dem Sinn, dass sie nur mit installiertem scikit-learn geprüft wird (`importorskip`), als Band (±0,6) und nur bei Version 1.9.1; ob andere Software bei Trennung keinen Fehler meldet, ist nicht gemessen.
 
 ### Rechenregeln und Hinweise zu den Zahlen
 
@@ -125,7 +130,7 @@ Gilt für diese Version, diese Einstellungen und diese Punkte; die App rechnet s
 - **Gleiche Zufalls-Seeds, gleiche Stichproben** auf jeder Plattform (SplitMix64 mit plattformfester Normalzahl); die Rechnung der Lösungen (HiGHS, BLAS, `numpy.exp`) kann an der letzten Binärstelle abweichen. Die Beschriftungen sind darum „Zahl der Stichproben“, nie „immer“.
 - **Mehrverlust und Grenze** beziehen sich auf die wahre Wahrscheinlichkeit des erfundenen Stroms mit den zwölf nicht modellierten Kunden; in einer anderen Anordnung (andere Schwelle als 7 Tage, andere Spalten) ändern sich alle Häufigkeiten.
 - **„Zahl → Test“:** jede Zahl dieser README steht in `tests/test_claims.py` (Zahl in der README, Band, Neu-Rechnung oder Konsistenz gegen `data/lsp_frozen.json`) oder in einer der Testdateien der Tabelle; Zusatzmessungen ohne Test sind als „Messung beim Bau, nicht im Test“ gekennzeichnet
-  (Rechenzeiten, scikit-learn-Werte außerhalb von `importorskip`).
+  (Rechenzeiten; die scikit-learn-Werte nur als Band, mit `importorskip` und für Version 1.9.1, siehe oben).
 
 ## Befunde und Korrekturen gegenüber früheren Messungen
 
@@ -158,7 +163,7 @@ Keine Neuheitsaussage: nichts hier ist wissenschaftlich neu.
 - **Die „gängige Abbruchregel“ ist ein Nachbau aus dem Gedächtnis** (Kappung |η| ≤ 30, Abbruch nach |ΔD| / (|D| + 0,1) < 1e-8, höchstens 25 Schritte); gegen eine bestimmte Software nicht geprüft. Die scikit-learn-Werte gelten für Version 1.9.1 und Windows.
 - **Zuwachsregel:** „Zuwachs 1/kleinstes |x|“ gilt für die symmetrischen sechs Punkte und beim Skalieren; allgemein erhöht jeder Newton-Schritt den Abstand der Stützpunkte um 1, wenn es so viele Stützpunkte wie Parameter gibt (eigene Herleitung, am asymmetrischen Beispiel nachgerechnet);
   bei mehr Stützpunkten als Parametern nicht gemessen.
-- **Quasi-Trennung bei Gleichständen:** der IRLS kann bei getrennten Daten „konvergiert“ melden (frühere Messung: bei 50 von 1565 getrennten Datensätzen mit einem Merkmal fiel der Schritt unter 1e-9); hier nicht wiederholt.
+- **Quasi-Trennung bei Gleichständen:** der IRLS kann bei getrennten Daten „konvergiert“ melden (frühere Messung: bei 50 von 1565 getrennten Datensätzen mit einem Merkmal fiel der Schritt unter 1e-9); hier nicht wiederholt, und welche Software wie oft „konvergiert“ meldet, ist nicht gemessen (die einzige Messung an Software ist die scikit-learn-Zeile in den Befunden).
 - **Firth** nur als Newton mit Schrittweitenhalbierung; keine profilierten Intervalle, keine Cauchy-Priors, keine Posterior-Mittel: „Firth gegen Prior“ bleibt offen. **Ridge** nur mit zwei festen Stärken, keine Wahl der Stärke. **Streichen** nur als „Spalte mit dem größten |β| beim Abbruch“.
 - **Faustregel:** Container-Merkmale mit Gauß-Rauschmerkmalen, nicht die Anordnung der Quelle; die Zahlen sind schwächer als dort.
 - **Cover-Formel:** für kleine Fälle durch Aufzählung gleich der Formel, nicht allgemein bewiesen; der Anteil gilt für Merkmale ohne Zusammenhang mit dem Ausgang, im Container-Strom kommt die Trennung aus Zellen mit kleiner Standgeld-Rate.
@@ -205,8 +210,8 @@ Keine Neuheitsaussage: nichts hier ist wissenschaftlich neu.
 
 - **PDF-Export** der Ergebnisse.
 - **Cauchy-Priors, Posterior-Mittel und profilierte Intervalle** als Alternativen zu Firth.
-- **Wahl der Ridge-Stärke** (Kreuzvalidierung, GCV, L-Kurve): dafür [tikhonov-demo](https://github.com/sebastian-hanisch/tikhonov-demo) und [parameterwahl-demo](https://github.com/sebastian-hanisch/parameterwahl-demo).
-- **Existenz des Schätzers gegen den Spielplan** (Gewinngraph, Newton gegen Zermelo-Iteration) im Bradley-Terry-Modell: [bradley-terry-demo](https://github.com/sebastian-hanisch/bradley-terry-demo); ein Paarvergleichsmodell hat eine Designmatrix aus Differenzen von Indikatoren, die Trennung ist dort verwandt
+- **Wahl der Ridge-Stärke** (Kreuzvalidierung, GCV, L-Kurve): dafür [tikhonov-demo](https://github.com/sebastian-hanisch/tikhonov-demo) und [parameterwahl-demo](https://github.com/sebastian-hanisch/parameterwahl-demo). <!-- links-ok: Repo existiert auf GitHub, lokal fehlt der Ordner -->
+- **Existenz des Schätzers gegen den Spielplan** (Gewinngraph, Newton gegen Zermelo-Iteration) im Bradley-Terry-Modell: [bradley-terry-demo](https://github.com/sebastian-hanisch/bradley-terry-demo); ein Paarvergleichsmodell hat eine Designmatrix aus Differenzen von Indikatoren, die Trennung ist dort verwandt <!-- links-ok: Repo existiert auf GitHub, lokal fehlt der Ordner -->
   (nach der Modellform; nicht nachgerechnet).
 - **Trennung bei der partiellen Likelihood** des Cox-Modells: [cox-regression-demo](https://github.com/sebastian-hanisch/cox-regression-demo).
 - **Robuste Standardfehler, nicht kanonische Links, Deviance als Gütetest, Kalibrierung und Entscheidungsschwelle, Mehrklassen-Logit** sind nicht Gegenstand dieser Demo.
@@ -234,4 +239,4 @@ Gebaut mit Streamlit, Plotly, NumPy, SciPy und pandas.
 
 ---
 
-Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). Mehr zu den Demos: [Interaktive Demos](https://sebastianhanisch.net/demos.html).
+Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). Mehr zur Reihe: [Regression und GLM: wann die Gleichung trügt](https://sebastianhanisch.net/konzepte-regression.html).

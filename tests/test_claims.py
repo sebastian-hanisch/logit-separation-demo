@@ -178,7 +178,7 @@ def test_bezug_ohne_trennung_und_grenze():
 
 
 def test_beispiel_nullzelle_ab_zufalls_seed_1():
-    in_readme("Umschlag 20 Container, kein Standgeld", "−19,65", "−26,65", "−3,95", "−5,50", "−2,67", "z = −0,01 (p = 0,995)", "8,31 (p = 0,0040)", "ML 0,161", "0,219", "Firth 0,039", "0,053 und 0,059", "Streichen 0,101")
+    in_readme("Umschlag 20 Container, kein Standgeld", "−19,65", "−26,65", "−3,95", "−5,50", "−2,67", "z = −0,01 (p = 0,995;", "nach 18 Schritten", "8,31 (p = 0,0040)", "ML 0,161", "0,219", "Firth 0,039", "0,053 und 0,059", "Streichen 0,101")
     b = ev.exp4_beispiel(100, 1)
     assert b["seed"] == 1 and b["nullzellen"] == [("Art Umschlag", 20, 0)] and b["spalte"] == "Umschlag"
     j = C.SPALTEN.index("Umschlag")
@@ -217,8 +217,9 @@ def test_korrekturen_frueherer_messungen_stehen_in_der_readme():
 def test_readme_nennt_keine_planungswoerter():
     import re
 
+    ohne_fuss = README.rsplit("\n---\n", 1)[0]  # der Footer („Mehr zur Reihe: …“) stammt vom Footer-Werkzeug
     for wort in ("Stück", "Linie", "Reihe", "Vormessung", "Phase 0", "Plan Z", "geplant", "Saatwert", "trägt", "tragen"):
-        assert not re.search(rf"\b{wort}\b", README), wort
+        assert not re.search(rf"\b{wort}\b", ohne_fuss), wort
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -279,3 +280,85 @@ def test_nullzelle_bei_n_100_in_147_von_151():
     z = ev.haeufigkeit_zeile(FZ, 100, 1.0)
     assert (z["nullzelle"], z["getrennt"]) == (147, 151)
     in_readme("151 von 300 und in 136 von 300 Stichproben aus zwei Zufallsströmen")
+
+
+def test_nullzelle_je_gruppe_bei_n_100_neu_gerechnet_als_band():
+    """„Vor allem Umschlag“: die Zählung je Gruppe steht nicht in der Datei, sondern wird hier neu gerechnet (Band: Zählungen ± 2)."""
+    in_readme("bei Umschlag in 138 getrennten Stichproben", "bei Zollhalt 1 in 11", "bei Leer in 6", "bei Export in 1", "bei Import und Wochenende in 0")
+    from lsp_messungen import nullzellen_je_gruppe
+
+    z = nullzellen_je_gruppe(1.0, 100, 300)
+    soll = ev.haeufigkeit_zeile(FZ, 100, 1.0)
+    assert (soll["getrennt"], soll["nullzelle"]) == (151, 147)
+    assert (z["getrennt"], z["mit_nullzelle"]) == pytest.approx((151, 147), abs=2)
+    je = z["je_gruppe"]
+    for name, erwartet in (("Art Umschlag", 138), ("Zollhalt", 11), ("Art Leer", 6), ("Art Export", 1), ("Art Import", 0), ("Wochenende", 0)):
+        assert je.get(name, 0) == pytest.approx(erwartet, abs=2), name
+    assert je["Art Umschlag"] > 10 * max(v for k, v in je.items() if k != "Art Umschlag")
+
+
+def test_app_nennt_fuer_die_koeffizientenregel_200_schritte_wie_die_readme():
+    app = (ROOT / "app.py").read_text(encoding="utf-8")
+    in_readme("die Koeffizientenregel greift in 200 Schritten nicht")
+    assert "greift im Pfad der App von 200 Schritten nie" in app and "700 Schritten" not in app
+    r = ev.exp2(C.E2_DATEN[0], 1.0, 200, C.E2_REGELN[2])
+    assert r["stopp"]["Koeffizientenänderung"] == (200, False)
+
+
+def test_beispiel_wald_gehoert_zur_regel_mit_kappung_nach_18_schritten():
+    import lsp_separation as P
+
+    st = S.ziehe(100, 1, 1.0, stream=11)
+    X = st.X()
+    Xk = X[:, P.voller_rang(X)]
+    assert P.ist_getrennt(Xk, st.y)
+    _b, schritte, regulaer = L.irls_gekappt(Xk, st.y)
+    assert (schritte, regulaer) == (18, True)
+
+
+def test_firth_ridge_streichen_wie_in_der_readme_beschrieben():
+    """Code-Verhalten, das die README nennt: Firth (Start 0, Schritt auf 5 begrenzt, 40 Halbierungen, 1e-9, 300 Schritte), Ridge (standardisiert mit Nenner n, Summe, Achsenabschnitt frei),
+    Streichen (genau eine Spalte), gängige Regel (höchstens 25 Schritte)."""
+    import inspect
+
+    import lsp_separation as P
+    from scipy import optimize, special
+
+    in_readme("auf höchstens 5 zurückgeschnitten", "höchstens 40 Halbierungen", "unter 1e-9", "höchstens 300 Schritte", "Nenner n", "als Summe ein", "Achsenabschnitt bleibt unbestraft", "genau eine Spalte", "höchstens 25 Schritte")
+    assert (C.FIRTH_SCHRITT_MAX, C.FIRTH_HALBIERUNGEN, C.FIRTH_TOL, C.FIRTH_MAX_SCHRITTE, C.GAENGIG_MAX_SCHRITTE) == (5.0, 40, 1e-9, 300, 25)
+    assert inspect.signature(L.firth).parameters["maxit"].default == 300 and inspect.signature(L.firth).parameters["tol"].default == 1e-9
+    assert inspect.signature(L.irls_gekappt).parameters["maxit"].default == 25
+
+    # Firth: Start β = 0 (ein Schritt ist der Schritt aus β = 0), die Schrittkomponente ist auf 5 begrenzt
+    x6 = np.array(C.SEP6_X, float)
+    X6, y6 = L.design_1d(x6), np.array(C.SEP6_Y, float)
+    u, inv = L.firth_score(X6, y6, np.zeros(2))
+    assert L.firth(X6, y6, maxit=1)[0] == pytest.approx(inv @ u, abs=1e-12)
+    X_klein, y_klein = L.design_1d(0.01 * x6), y6
+    u, inv = L.firth_score(X_klein, y_klein, np.zeros(2))
+    assert np.max(np.abs(inv @ u)) > 5.0, "ohne Begrenzung wäre der erste Schritt größer als 5"
+    assert np.max(np.abs(L.firth(X_klein, y_klein, maxit=1)[0])) <= 5.0 + 1e-12
+
+    st = S.ziehe(100, 1, 1.0, stream=11)
+    X = st.X()
+    Xk = X[:, P.voller_rang(X)]
+    y = st.y
+
+    # Ridge: Summe der Log-Likelihood, Standardisierung mit Nenner n (np.std), Achsenabschnitt unbestraft, Rückrechnung auf die Originalskala
+    lam = 0.1
+    mu, sd = Xk[:, 1:].mean(axis=0), Xk[:, 1:].std(axis=0)
+    Z = np.column_stack([np.ones(len(y)), (Xk[:, 1:] - mu) / sd])
+
+    def zielfunktion(b):
+        eta = Z @ b
+        wert = -np.sum(y * eta - np.logaddexp(0.0, eta)) + 0.5 * lam * np.sum(b[1:] ** 2)
+        grad = -Z.T @ (y - special.expit(eta)) + lam * np.r_[0.0, b[1:]]
+        return wert, grad
+
+    bz = optimize.minimize(zielfunktion, np.zeros(Z.shape[1]), jac=True, method="BFGS", options={"gtol": 1e-10, "maxiter": 1000}).x
+    erwartet = np.r_[bz[0] - np.sum(bz[1:] * mu / sd), bz[1:] / sd]
+    assert L.ridge(Xk, y, lam) == pytest.approx(erwartet, abs=1e-4)
+
+    # Streichen: genau eine Spalte (nicht der Achsenabschnitt) bekommt den Koeffizienten 0
+    b, j = L.streichen(Xk, y)
+    assert j >= 1 and b[j] == 0.0 and int(np.sum(b == 0.0)) == 1

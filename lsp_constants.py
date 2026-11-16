@@ -34,6 +34,18 @@ DEV_RULE_EPS = 1e-8                           # Deviance-Regel: |ΔD| / (|D| + 0
 COEF_RULE_EPS = 1e-8                          # Koeffizientenregel: größte Änderung eines Koeffizienten unter dieser Schwelle
 CAP_ETA = 30.0                                # Kappung |η| ≤ 30 im Nachbau der gängigen Regel (nur Exp. 4)
 LP_SCHWELLE = 1e-9                            # Optimum des Rezessions-LP über dieser Schwelle: getrennt
+GAENGIG_MAX_SCHRITTE = 25                     # Nachbau der gängigen Regel: höchstens so viele Schritte (Standardwert von irls_gekappt)
+FIRTH_MAX_SCHRITTE, FIRTH_TOL = 300, 1e-9     # Firth: höchstens so viele Schritte, Abbruch bei größter Schrittänderung unter FIRTH_TOL
+FIRTH_SCHRITT_MAX = 5.0                       # Firth: größter Betrag einer Schrittkomponente (der Schritt wird darauf zurückgeschnitten)
+FIRTH_HALBIERUNGEN = 40                       # Firth: höchstens so viele Halbierungen der Schrittweite je Schritt
+
+GITHUB = "https://github.com/sebastian-hanisch/"   # Nachbar-Demos: GitHub-Links werden aus dem Namen gebaut
+
+
+def repo_link(name):
+    """Markdown-Link auf ein Demo-Repo."""
+    return f"[{name}]({GITHUB}{name})"
+
 
 # --- Regler -------------------------------------------------------------------------------------------------------------------------------
 SEED_MAX, DEFAULT_SEED = 9999, 1

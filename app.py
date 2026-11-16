@@ -71,12 +71,24 @@ st.markdown(
     """
 Ob ein Container **Standgeld** zahlen muss (Verweilzeit über 7 Tage), ist ein **Ja/Nein-Ausgang**. Eine Gerade durch Nullen und Einsen sagt Werte unter 0 und über 1 voraus; darum passt man ein **Logit**
 an, per **IRLS** (iterativ gewichtete kleinste Quadrate), und beim Logit ist jeder IRLS-Schritt ein **Newton-Schritt**. Die Falle: **trennen** die Daten, etwa weil in der Stichprobe kein einziger
-Umschlag-Container Standgeld zahlt, **existiert der Schätzer nicht**, die Software meldet trotzdem Zahlen, und sie hängen an der Abbruchregel; der Wald-Test sieht dabei keinen Effekt.
+Umschlag-Container Standgeld zahlt, **existiert der Schätzer nicht**; die Rechnung läuft Schritt für Schritt weiter, die angezeigten Zahlen hängen an der Abbruchregel, und der Wald-Test sieht in den Beispielen
+der Demo keinen Effekt.
 
 Die Demo rechnet Handbeispiele in Brüchen und einen erfundenen Containerstrom (kein Echtdatenbezug), misst, wie oft Trennung vorkommt und was bei getrennten Stichproben hilft. Weiter unten: die vier
 Experimente, **🚧 Wo die Annahmen enden** und der Expander **📐 Mathematische Formulierung**.
 """
 )
+
+# erklaerseite:einfach:start (erzeugt von tools/set_demo_explainer.py (Website-Repo) aus tools/content/explainers/separation-erklaert.json, nicht von Hand ändern)
+with st.expander("💬 In einfachen Worten"):
+    st.markdown(
+        """
+Stellen Sie sich vor, in einer Stichprobe von Containern hat eine Gruppe, etwa die Umschlag-Container, nie Standgeld gekostet. Das Logit soll nun sagen, wie stark diese Gruppe das Standgeld senkt. Die beste Antwort der Daten wäre „Wahrscheinlichkeit null“, doch ein Logit erreicht null nie: Je stärker negativ die Zahl, desto besser passt es zu den Daten. Man sagt, die Daten **trennen**, und der **Schätzer** existiert nicht. Die Rechnung läuft Schritt für Schritt weiter und hält erst an, wenn eine **Abbruchregel** es sagt; die ausgegebene Zahl hängt dann an dieser Regel, und in den getrennten Handbeispielen findet der Wald-Test keinen Effekt. Die Demo zeigt das an Handbeispielen, zählt, wie oft es in einem erfundenen Containerstrom vorkommt, und vergleicht Firth-Korrektur und Ridge-Strafe. Sie gilt für dieses Rechenmodell, nicht für echte Hafendaten.
+
+[Ausführlich und verständlich erklärt, mit Fachteil](https://sebastianhanisch.net/separation-erklaert.html)
+        """
+    )
+# erklaerseite:einfach:end
 
 with st.expander("So funktioniert das Logit mit IRLS", expanded=True):
     st.markdown(
@@ -213,11 +225,12 @@ for rg in C.E2_REGELN:
 st.dataframe(pd.DataFrame(tab2), hide_index=True, width="stretch")
 kind, text = ev.verdict_exp2(r2)
 getattr(st, kind)(text)
-with st.expander("Was Programme daraus machen (Messung dieser README, nicht von der App gerechnet)"):
+with st.expander("Was ein Programm daraus macht (Messung dieser README, nicht von der App gerechnet)"):
     st.markdown(
         "scikit-learn 1.9.1 (`LogisticRegression`, `penalty=None`, lbfgs) auf die sechs Punkte, Windows: β₁ = 8,35 bei `max_iter` 100 und `tol` 1e-4, 17,36 bei 1000 und 1e-8, 27,06 bei 100000 und 1e-12; "
-        "**keine Konvergenzwarnung** (aufgefangen wurde nur eine Warnung zum veralteten Argument `penalty`). Eine Koeffizientenregel (Änderung unter 1e-8) greift in 700 Schritten nie. "
-        "Das gilt für diese Version, diese Einstellungen und diese Punkte; die Regel mit Kappung |η| ≤ 30 ist hier aus dem Gedächtnis nachgebaut (Experiment „Was hilft?“), nicht gegen R oder eine andere Software geprüft."
+        "**keine Konvergenzwarnung** (aufgefangen wurde nur eine Warnung zum veralteten Argument `penalty`). Die Koeffizientenregel (Änderung unter 1e-8) greift im Pfad der App von 200 Schritten nie. "
+        "Das gilt für diese Version, diese Einstellungen und diese Punkte; welche andere Software wie oft keinen Fehler meldet, ist nicht gemessen, und die Regel mit Kappung |η| ≤ 30 ist hier aus dem Gedächtnis nachgebaut "
+        "(Experiment „Was hilft?“), nicht gegen R oder eine andere Software geprüft."
     )
 
 st.markdown("---")
@@ -247,8 +260,8 @@ st.plotly_chart(
 raten = _raten()
 st.caption(
     "Band: Wilson-Intervall (95 %) für den Anteil bei der Zahl der Stichproben. Gestrichelt: ohne jeden Zusammenhang zwischen Merkmalen und Ausgang trennen n Punkte in allgemeiner Lage mit 7 Spalten nur bis n = 14 mit Wahrscheinlichkeit von mindestens 1/2 "
-    "(Cover-Formel; bei n = 2p genau 1/2). Im Container-Vehikel " + (f"hatten bei diesem n und dieser Streuung {z3['nullzelle']} von {z3['getrennt']} getrennten Stichproben eine Nullzelle" if z3["getrennt"] else "gab es bei diesem n und dieser Streuung keine getrennte Stichprobe") + "; das passt zu Zellen mit sehr kleiner Standgeld-Rate, vor allem Umschlag "
-    f"(wahre Rate im Mittel {ev.pct(raten['Umschlag'])}, Import {ev.pct(raten['Import'])}, Export {ev.pct(raten['Export'])}, Leer {ev.pct(raten['Leer'])}; Testmenge mit 100 000 Containern), ist aber eine Deutung, keine gemessene Ursache."
+    "(Cover-Formel; bei n = 2p genau 1/2). Im Container-Vehikel " + (f"hatten bei diesem n und dieser Streuung {z3['nullzelle']} von {z3['getrennt']} getrennten Stichproben eine Nullzelle" if z3["getrennt"] else "gab es bei diesem n und dieser Streuung keine getrennte Stichprobe") + "; das passt zu Zellen mit sehr kleiner Standgeld-Rate, bei n = 100 und Standardstreuung vor allem Umschlag (Zählung je Gruppe in der README; "
+    f"wahre Rate im Mittel Umschlag {ev.pct(raten['Umschlag'])}, Import {ev.pct(raten['Import'])}, Export {ev.pct(raten['Export'])}, Leer {ev.pct(raten['Leer'])}; Testmenge mit 100 000 Containern), ist aber eine Deutung, keine gemessene Ursache."
 )
 kind, text = ev.verdict_exp3(z3, fz["haeufigkeit_zweiter_strom"], noise3)
 getattr(st, kind)(text)
@@ -327,7 +340,7 @@ else:
     st.dataframe(pd.DataFrame(zeilen4), hide_index=True, width="stretch")
     zellen = "; ".join(f"{nm}: {k} Container, {s} mit Standgeld" for nm, k, s in bsp4["nullzellen"]) or "keine"
     st.caption(
-        f"Zellen, in denen alle gleich ausgehen: {zellen}. Spalte mit dem größten |β| beim Abbruch: {bsp4['spalte']}; Wald z = {ev.de(bsp4['z'], 2)} (p = {ev.de(bsp4['p_wald'], 3)}), "
+        f"Zellen, in denen alle gleich ausgehen: {zellen}. Spalte mit dem größten |β| beim Abbruch: {bsp4['spalte']}; Wald z bei den Koeffizienten der Abbruchregel = {ev.de(bsp4['z'], 2)} (p ={ev.de(bsp4['p_wald'], 3)}), "
         f"Likelihood-Quotient beim Weglassen der Spalte {ev.de(bsp4['lq'], 2)} (p = {ev.de(bsp4['p_lq'], 4)})" + ("." if bsp4["lq_konv"] else "; das Modell ohne die Spalte hat selbst keinen endlichen Schätzer, die Zahl ist ein Abbruchwert.")
     )
 
@@ -376,7 +389,7 @@ st.markdown(
 | Annahme | Was passiert, wenn sie verletzt ist | Wer setzt an |
 |---|---|---|
 | **Der Ausgang ist stetig und sein Mittel linear im Merkmal** (Annahme der Demos davor) | Eine Gerade auf Standgeld ja/nein sagt für {ev.pct(br3000['ausserhalb_mittel'])} der Testcontainer einen Wert außerhalb von [0, 1] voraus (n = 3000, Container-Vehikel). | Das Logit, in dieser Demo. |
-| **Der ML-Schätzer existiert** | Bei n = 100 trennten {z100['getrennt']} von {z100['reps']} Stichproben (Standardstreuung), alle nur quasi; dann ist jeder angezeigte Koeffizient ein Abbruchwert und der Wald-Test sagt „kein Effekt“. | Firth (hier gemessen) und Ridge (zwei feste Stärken); die Wahl der Stärke: [tikhonov-demo](https://github.com/sebastian-hanisch/tikhonov-demo), [parameterwahl-demo](https://github.com/sebastian-hanisch/parameterwahl-demo). |
+| **Der ML-Schätzer existiert** | Bei n = 100 trennten {z100['getrennt']} von {z100['reps']} Stichproben (Standardstreuung), alle nur quasi; dann ist jeder angezeigte Koeffizient ein Abbruchwert und der Wald-Test sagt „kein Effekt“. | Firth (hier gemessen) und Ridge (zwei feste Stärken); die Wahl der Stärke: {C.repo_link('tikhonov-demo')}, {C.repo_link('parameterwahl-demo')}. |
 | **Die Standardfehlerformel gilt, wenn n ≥ 5p** | Bei p/n = {ev.de(rg['p_n'], 2)} lehnt der Wald-Test bei Rauschmerkmalen in {ev.pct(rg['wald_ablehnung'])} statt 5 % ab, der Zollhalt-Koeffizient ist {ev.de(rg['zollhalt_verhaeltnis_median'], 2)}-fach überhöht. | Nur gemessen, nicht gelöst (keine Korrektur in dieser Demo). |
 | **Die Form ist logistisch** | Die wahre Wahrscheinlichkeit ist hier nicht logistisch; selbst das beste Logit lässt einen Mehrverlust von {ev.de(fz['meta']['mehrverlust_grenze'], 3)} nat. | Kalibrierung und andere Links: Nachbar-Demos der Regressions-Demos. |
 | **Standgeld hängt nur von den sieben Spalten ab** | Die zwölf Kunden wirken im Strom auf die Verweilzeit, stehen aber nicht im Modell (nicht getrennt gemessen, wie viel vom Rest daher kommt). | Gemischte Modelle: Nachbar-Demo. |
@@ -386,10 +399,10 @@ st.markdown(
 st.markdown("---")
 
 with st.expander("📐 Mathematische Formulierung"):
+    # erklaerseite:lesehilfe:start (erzeugt von tools/set_demo_explainer.py (Website-Repo) aus tools/content/explainers/separation-erklaert.json, nicht von Hand ändern)
     st.markdown(
         r"""
-**Lesehilfe.** Gegeben sind $n$ Container mit Merkmalszeilen $x_i$ und Ausgang $y_i \in \{0, 1\}$ (Standgeld ja/nein); gesucht ist $\beta$ mit der größten Log-Likelihood. $p$ zählt die Spalten **inklusive**
-Achsenabschnitt (in ISLR2 zählt $p$ die Merkmale ohne Achsenabschnitt).
+**Lesehilfe.** Gegeben sind $n$ Container mit Merkmalszeilen $x_i$ und Ausgang $y_i \in \{0, 1\}$ (Standgeld ja/nein); gesucht ist $\beta$ mit der größten Log-Likelihood und die Antwort auf die Frage, wann es ein solches $\beta$ nicht gibt. $p$ ohne Index zählt die Spalten **inklusive** Achsenabschnitt (in ISLR2 zählt $p$ die Merkmale ohne Achsenabschnitt), $p_i$ mit Index ist die Wahrscheinlichkeit für Standgeld.
 
 | Symbol | Bedeutung |
 |---|---|
@@ -398,8 +411,19 @@ Achsenabschnitt (in ISLR2 zählt $p$ die Merkmale ohne Achsenabschnitt).
 | $p_i = 1/(1 + e^{-\eta_i})$ | Wahrscheinlichkeit für Standgeld |
 | $w_i = p_i(1 - p_i)$ | Gewicht |
 | $z_i = \eta_i + (y_i - p_i)/w_i$ | Arbeitsantwort |
-| $D$ | Deviance |
+| $D$ | Deviance, $D = -2\,\ell(\beta)$ |
 | $s_i = 2y_i - 1$ | Vorzeichen des Ausgangs |
+| $h_i$ | Hebel der gewichteten Hat-Matrix (Firth) |
+| $\lambda$ | Stärke der Ridge-Strafe |
+
+[Schritt für Schritt erklärt, mit Herleitung und Literatur](https://sebastianhanisch.net/separation-erklaert.html#fachleute)
+        """
+    )
+    # erklaerseite:lesehilfe:end
+    st.markdown(
+        r"""
+**Schreibweise.** Einige Symbole haben zwei Bedeutungen und sind je nach Stelle getrennt zu lesen: $p$ ohne Index (Zahl der Spalten) gegen $p_i$ und $p_g$ (Wahrscheinlichkeiten); $s_i = 2y_i - 1$ (Vorzeichen des Ausgangs)
+gegen $s_g$ (Zahl der Standgeld-Fälle in der Gruppe $g$ mit $n_g$ Containern) und gegen $s_i$ in der Formel des Mehrverlusts (Streuung der Log-Verweilzeit des Containers $i$); $z_i$ (Arbeitsantwort) gegen $z_j$ (Wald-Wert der Spalte $j$).
 
 **Modell.** $y_i$ ist Bernoulli mit Wahrscheinlichkeit $p_i$ (kanonischer Link: Logit). Die Log-Likelihood ist
 
@@ -414,7 +438,7 @@ also gewichtete kleinste Quadrate auf der Arbeitsantwort $z$. Bei einem 0/1-Merk
 **Wald und Likelihood-Quotient.** $z_j = \hat\beta_j / \sqrt{[(X'WX)^{-1}]_{jj}}$; der Likelihood-Quotient ist $D_0 - D$ mit der Deviance $D_0$ des Modells nur mit Achsenabschnitt, bei Gültigkeit der Nullhypothese $\chi^2$ mit $p - 1$ Freiheitsgraden.
 
 **Trennung.** Die Daten heißen *vollständig getrennt*, wenn ein $\beta$ mit $s_i x_i'\beta > 0$ für alle $i$ existiert, *quasi-vollständig*, wenn nur $\ge$ gilt und für mindestens einen Punkt Gleichheit, sonst *überlappend*
-(Begriffe nach Kosmidis und Firth 2019). Dann hat der ML-Schätzer mindestens eine unendliche Komponente. Prüfung hier als Linearprogramm
+(Begriffe nach Kosmidis und Firth). Dann hat der ML-Schätzer mindestens eine unendliche Komponente. Prüfung hier als Linearprogramm
 
 $$\max_d \ \sum_i s_i x_i' d \quad \text{unter} \quad s_i x_i' d \ge 0,\ \ -1 \le d_j \le 1;$$
 
@@ -432,9 +456,14 @@ $$U^{*}(\beta) = X'\left(y - p + h\left(\tfrac12 - p\right)\right) = 0,$$
 
 mit den Hebeln $h_i$ der gewichteten Hat-Matrix. Im Zwei-Gruppen-Modell ist die Lösung $p_g = (s_g + \tfrac12)/(n_g + 1)$: ein halbes in jede Zelle. **Ridge:** Strafe $\tfrac12\lambda\sum_{j \ge 1}\beta_j^2$ auf standardisierten Spalten.
 
+**Rechenweise im Code.** Firth: Newton mit Start $\beta = 0$; die größte Schrittkomponente wird auf höchstens 5 zurückgeschnitten, je Schritt gibt es höchstens 40 Halbierungen der Schrittweite (die gestrafte Log-Likelihood darf nicht
+sinken), Abbruch bei größter Schrittänderung unter 1e-9, höchstens 300 Schritte. Ridge: alle Spalten außer dem Achsenabschnitt werden mit Mittel und Standardabweichung der Stichprobe (Nenner $n$) standardisiert, die Log-Likelihood
+geht als Summe ein (nicht als Mittel), der Achsenabschnitt bleibt unbestraft, die Koeffizienten stehen danach wieder auf der Skala der Originalspalten. „Streichen“ entfernt genau eine Spalte (Export, Umschlag und Leer zählen einzeln);
+die gängige Regel (Nachbau) rechnet höchstens 25 Schritte.
+
 **Mehrverlust.** Gegen die wahre Wahrscheinlichkeit $\pi_i = \Phi((\mu_i - \ln 7)/s_i)$ des Stroms: der Mittelwert über Testcontainer von $-[\pi \ln \hat p + (1 - \pi)\ln(1 - \hat p)]$ minus die Entropie der $\pi_i$.
 
-**Literatur** (nur so zitiert, wie gelesen): Hastie, Tibshirani, Friedman, *The Elements of Statistical Learning*, Abschn. 4.4.1 (IRLS, Newton; Wortlaut gelesen). Kosmidis und Firth 2019, Abschn. 1 (Begriffe der Trennung,
+**Literatur** (nur so zitiert, wie gelesen): Hastie, Tibshirani, Friedman, *The Elements of Statistical Learning*, Abschn. 4.4.1 (IRLS, Newton; Wortlaut gelesen). Kosmidis und Firth, Abschn. 1 (Begriffe der Trennung,
 Hinweis auf Wald-Tests; Albert und Anderson 1984 nur über diese Quelle). Sur und Candès 2019 sowie Candès und Sur 2020 (Faustregel, Schwelle bei Merkmalen ohne Zusammenhang; Wortlaut gelesen). Firth 1993 und Cover 1965 nur über Zweitquellen.
         """
     )
@@ -443,5 +472,5 @@ st.markdown("---")
 st.caption(
     "Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – "
     "Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). "
-    "Mehr zu den Demos: [Interaktive Demos](https://sebastianhanisch.net/demos.html)."
+    "Mehr zur Reihe: [Regression und GLM: wann die Gleichung trügt](https://sebastianhanisch.net/konzepte-regression.html)."
 )
