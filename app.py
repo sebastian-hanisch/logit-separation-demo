@@ -239,7 +239,7 @@ m1, m2, m3, m4 = st.columns(4)
 m1.metric("Getrennte Stichproben", f"{z3['getrennt']} von {z3['reps']}", help="Zähleinheit: die Stichprobe; Rezessions-LP, vollständig oder quasi.")
 m2.metric("Anteil (95-%-Band)", f"{ev.pct(z3['getrennt'] / z3['reps'])}", delta=f"{ev.pct(lo3, 0)} bis {ev.pct(hi3, 0)}", delta_color="off")
 m3.metric("davon nur quasi", str(z3["quasi"]))
-m4.metric("davon mit Nullzelle", str(z3["nullzelle"]), help="Eine Zelle (Art, Zollhalt 1, Wochenende 1) mit mindestens einem Container, in der alle gleich ausgehen.")
+m4.metric("davon mit Nullzelle", str(z3["nullzelle"]), help="Eine von sechs Einzelgruppen (eine der vier Arten, Zollhalt 1, Wochenende 1; keine Kreuzzelle) mit mindestens einem Container, in der alle gleich ausgehen.")
 ns_dicht = list(range(7, 101)) + [200, 500, 1000, 3000]
 st.plotly_chart(
     build_exp3(ev.haeufigkeit_je_n(fz, 1.0), ev.haeufigkeit_je_n(fz, 0.5), (ns_dicht, ev.cover_je_n(7, ns_dicht)), (n3, noise3)), width="stretch", key="chart_e3"

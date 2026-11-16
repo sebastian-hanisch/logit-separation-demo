@@ -61,7 +61,7 @@ def aufzaehlung_trennbar(X) -> int:
 
 
 def nullzellen(art, zoll, wochenende, y):
-    """Zellen (Art, Zollhalt = 1, Wochenende = 1) mit mindestens einem Container, in denen alle gleich ausgehen: Liste (Name, Anzahl, Standgeld)."""
+    """Die sechs Einzelgruppen (jede der vier Arten, Zollhalt = 1, Wochenende = 1; keine Kreuzzellen) mit mindestens einem Container, in denen alle gleich ausgehen: Liste (Name, Anzahl, Standgeld)."""
     out = []
     zellen = [(f"Art {C.ART_LABELS[a]}", art == a) for a in range(4)] + [("Zollhalt", zoll == 1), ("Wochenende", wochenende == 1)]
     for name, m in zellen:

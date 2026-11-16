@@ -11,7 +11,7 @@ dazu kommen Handbeispiele mit gesetzten Zahlen, die sich von Hand in Brüchen na
 ## Warum dieses Problem
 
 Eine Gerade auf Standgeld ja/nein sagt für 15,5 % der Testcontainer einen Wert unter 0 oder über 1 voraus; also passt man ein Logit an, per IRLS, und beim Logit ist das ein Newton-Verfahren. Dann geschieht etwas, das bei stetigen
-Ausgängen nicht vorkommt: Gibt es in der Stichprobe eine Containerart ohne ein einziges Standgeld (im Strom dieser Demo kommt das bei Umschlag mit einer wahren Rate von 3,3 % vor: bei n = 100 haben 147 von 151 getrennten Stichproben eine Zelle (Art, Zollhalt 1, Wochenende 1), in der alle gleich ausgehen), so wächst der Koeffizient mit jedem Schritt weiter,
+Ausgängen nicht vorkommt: Gibt es in der Stichprobe eine Containerart ohne ein einziges Standgeld (im Strom dieser Demo kommt das bei Umschlag mit einer wahren Rate von 3,3 % vor: bei n = 100 haben 147 von 151 getrennten Stichproben eine Gruppe (eine der vier Arten, Zollhalt 1 oder Wochenende 1), in der alle gleich ausgehen), so wächst der Koeffizient mit jedem Schritt weiter,
 die Software meldet trotzdem Zahlen, und der Wald-Test sagt „kein Effekt“, obwohl die Daten vollkommen trennen. Die Demo zeigt das an sechs Punkten, misst, wie oft es im Container-Strom vorkommt (bei n = 100 in 151 von 300 und in 136 von 300 Stichproben aus zwei Zufallsströmen)
 und was bei getrennten Stichproben hilft. Nichts davon ist wissenschaftlich neu: Trennung ist Lehrbuchstoff; neu ist nur die Vorführbarkeit mit Zähleinheiten.
 
@@ -55,7 +55,7 @@ geschlossener Form; Band = Neu-Rechnung mit Toleranz, siehe „Rechenregeln und 
 | IRLS gegen Newton (Hesse-Matrix per Differenzenquotient) | größter Unterschied über 8 Schritte 3,1e−10 (Zollhalt) und 3,3e−10 (Vorlauf), Schranke 1e-7 | Band, `test_claims.py` |
 | Wald und Likelihood-Quotient (nicht getrennt, Zollhalt-Beispiel) | z = 1,546 (p = 0,122); Likelihood-Quotient 2,863 (p = 0,091); der exakte Test nach Fisher p = 0,206 | Band 5e-4, `test_logit.py`, `test_claims.py` |
 | Gerade im Vorlauf-Beispiel (acht Container) | Steigung 1/6, Achsenabschnitt −1/4: bei Vorlauf 1 der Wert −1/12, bei Vorlauf 8 der Wert 13/12 | exakt, `test_logit.py` |
-| Sechs Punkte x = −3, −2, −1, 1, 2, 3 mit y = 0, 0, 0, 1, 1, 1: erster Schritt | β = (0; 6/7), Deviance 12 ln 2 = 8,318 | exakt, `test_logit.py` |
+| Sechs Punkte x = −3, −2, −1, 1, 2, 3 mit y = 0, 0, 0, 1, 1, 1: erster Schritt | β = (0; 6/7) (Start bei β = 0 mit Deviance 12 ln 2 = 8,318) | exakt, `test_logit.py` |
 | Zuwachs von β₁ je Schritt (ohne Kappung, stabile Formeln) | 1,000000 (zwischen 0,999999 und 1,000001) in den Schritten 40 bis 100; bei Skalierung des Merkmals mit 0,5 / 1 / 2 gleich 2 / 1 / 0,5 (1/kleinstes \|x\|, nur bei symmetrischen Daten) | Band 1e-6, `test_logit.py` |
 | Abbruchregeln auf den sechs Punkten | Deviance-Regel hält bei Schritt 24 mit β₁ = 22,96; 25 Schritte: 23,96; 100: 98,96; 200: 198,96; die Koeffizientenregel greift in 200 Schritten nicht; der gekappte Nachbau hält bei Schritt 24 mit β₁ = 22,956 | Band, `test_logit.py` |
 | Wald-Test und Likelihood-Quotient bei diesen Punkten | Wald z = 1,39 nach Schritt 1, danach fallend, bei Schritt 24 gleich 0,0003 (p = 1,00); Likelihood-Quotient wächst auf 12 ln 2 = 8,318 (p = 0,0039); größtes \|z\| in den ersten 60 Schritten unter 1,45 | Band, `test_logit.py`, `test_claims.py` |
@@ -70,7 +70,7 @@ geschlossener Form; Band = Neu-Rechnung mit Toleranz, siehe „Rechenregeln und 
 **Gerade auf Standgeld** (Testmenge mit 100 000 Containern, Mittel über die Stichproben): Anteil der Testcontainer mit Vorhersage unter 0 oder über 1 bei n = 100: 16,7 % (100 Stichproben), n = 500: 15,6 % (60), n = 3000: 15,5 % (40).
 **Wahre Standgeld-Rate je Art** (Mittel über die Testmenge): Import 23,3 %, Export 25,9 %, Umschlag 3,3 %, Leer 50,5 %; insgesamt 21,8 %.
 
-**Wie oft trennen die Daten?** Anteil getrennter Stichproben (Rezessions-LP, vollständig oder quasi); Band = Wilson-Intervall 95 %; „Nullzelle“ = eine Zelle (Art, Zollhalt 1, Wochenende 1) mit mindestens einem Container, in der alle gleich ausgehen:
+**Wie oft trennen die Daten?** Anteil getrennter Stichproben (Rezessions-LP, vollständig oder quasi); Band = Wilson-Intervall 95 %; „Nullzelle“ = eine von sechs Einzelgruppen (eine der vier Arten, Zollhalt 1, Wochenende 1; keine Kreuzzelle) mit mindestens einem Container, in der alle gleich ausgehen:
 
 | n | Standardstreuung: getrennt | davon nur quasi | davon mit Nullzelle | halbe Streuung: getrennt | davon nur quasi | davon mit Nullzelle |
 |---|---|---|---|---|---|---|
@@ -98,7 +98,7 @@ oder null (235 Stichproben).
 | Ridge λ = 1 (Spalten standardisiert) | 0,092 | 19 von 150 | 0,071 | 15 von 150 |
 | Streichen der Spalte mit dem größten \|β\| | 0,170 | 4 von 150 | 0,110 | 9 von 150 |
 
-Gezogen wurden 200 Stichproben (n = 60; 150 getrennt, 75,0 %) und 306 (n = 100; 150 getrennt, 49,0 %). Der Mittelwert des Mehrverlusts ist bei ML von Ausreißern bestimmt (n = 60: 7,4e+08 bei der Abbruchregel, 2,40 bei 25 Schritten, gegen Median 0,711 und 0,982): ein getrennter Koeffizient kann die Vorhersage für ganze Arten
+Gezogen wurden 200 Stichproben (n = 60; 150 getrennt, 75,0 %) und 306 (n = 100; 150 getrennt, 49,0 %). Der Mittelwert des Mehrverlusts ist bei ML von Ausreißern bestimmt (n = 60: 7,4e+08 bei der Abbruchregel, 2,40 bei 25 Schritten, gegen Median 0,711 und 0,982): die Mediane der ML-Zeilen sind wegen des schweren Rands keine auf drei Stellen gesicherten Werte (150 getrennte Stichproben je Zelle); gesichert ist die Ordnung, ML ist in keiner der 150 Stichproben besser als Firth. Ein getrennter Koeffizient kann die Vorhersage für ganze Arten
 verderben. **Bezug ohne Trennung** (150 nicht getrennte Stichproben, n = 100): Mehrverlust im Median ML 0,062, Firth 0,057; Firth besser als ML in 107 von 150. **Grenze der Logit-Form: 0,024**; keine Methode erreicht sie, Ridge hängt an der Stärke (nur zwei feste Werte
 gemessen), „Streichen“ ist nur als Streichen der Spalte mit dem größten |β| beim Abbruch gemessen (nicht jede denkbare Streichregel).
 **Beispiel** (n = 100, erste getrennte Stichprobe ab Zufalls-Seed 1, in der App einstellbar): Umschlag 20 Container, kein Standgeld; Koeffizient der Spalte Umschlag −19,65 bei der Abbruchregel (−26,65 bei 25 Schritten), Firth −3,95, Ridge λ = 0,1 −5,50, λ = 1 −2,67, Wald z = −0,01 (p = 0,995),
@@ -113,7 +113,7 @@ Likelihood-Quotient beim Weglassen der Spalte 8,31 (p = 0,0040). Mehrverlust in 
 | 100 | 107 | 0,107 | 120 | 1,12 | 7,6 % | 1,23 |
 | 200 | 207 | 0,207 | 100 | 1,38 | 14,0 % | 1,85 |
 
-Der Schätzer existierte in allen 520 Stichproben (nicht konvergiert in 30 Schritten: 0). Qualitativ wie die Quelle (Sur und Candès 2019: Streuung über dem klassischen Standardfehler, Aufblähung des Koeffizienten, dort bei p/n = 1/5 klassisch 2,66 gegen simuliert rund 4,75 mit Gauß-Merkmalen, n = 4000, p = 800);
+Die Verhältnisse Zollhalt ÷ Grenzwert sind Mediane aus 100 bis 150 Stichproben und nur auf etwa eine Stelle gesichert. Der Schätzer existierte in allen 520 Stichproben (nicht konvergiert in 30 Schritten: 0). Qualitativ wie die Quelle (Sur und Candès 2019: Streuung über dem klassischen Standardfehler, Aufblähung des Koeffizienten, dort bei p/n = 1/5 klassisch 2,66 gegen simuliert rund 4,75 mit Gauß-Merkmalen, n = 4000, p = 800);
 quantitativ schwächer (hier 1,38 bei p/n = 0,207), andere Anordnung, nicht dieselbe Zahl.
 
 **scikit-learn** (Version 1.9.1, `LogisticRegression` mit `penalty=None`, lbfgs, Windows) auf die sechs Punkte: β₁ = 8,35 (`max_iter` 100, `tol` 1e-4), 17,36 (1000, 1e-8), 27,06 (100000, 1e-12); **keine Konvergenzwarnung** (aufgefangen wurde nur eine `FutureWarning` zum veralteten Argument `penalty`).
