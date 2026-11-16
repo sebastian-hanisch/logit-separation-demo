@@ -54,7 +54,7 @@ geschlossener Form; Band = Neu-Rechnung mit Toleranz, siehe „Rechenregeln und 
 |---|---|---|
 | Neun Container: Zollhalt 0 vier Container mit einem Standgeld, Zollhalt 1 fünf Container mit vier. Erster IRLS-Schritt | β = (−1; 11/5) in Brüchen | exakt, `test_logit.py` |
 | Grenzwert | β = (ln 1/3; ln 12): Odds 1/3 ohne und 4 mit Zollhalt, Odds-Ratio 12; IRLS erreicht ihn in 6 Schritten (Änderung unter 1e-13) | exakt (Form), Band 5 bis 7 Schritte, `test_logit.py` |
-| IRLS gegen Newton (Hesse-Matrix per Differenzenquotient) | größter Unterschied über 8 Schritte 3,1e−10 (Zollhalt) und 3,3e−10 (Vorlauf), Schranke 1e-7 | Band, `test_claims.py` |
+| IRLS gegen Newton (Hesse-Matrix per Differenzenquotient) | größter Unterschied über 8 Schritte unter 1e-7 und über 1e-11 (Windows: 3,1e−10 Zollhalt und 3,3e−10 Vorlauf; Linux-CI: 3,1e−10 und 7,7e−10, der Differenzenquotient rundet je Plattform anders) | Band, `test_claims.py` |
 | Wald und Likelihood-Quotient (nicht getrennt, Zollhalt-Beispiel) | z = 1,546 (p = 0,122); Likelihood-Quotient 2,863 (p = 0,091); der exakte Test nach Fisher p = 0,206 | Band 5e-4, `test_logit.py`, `test_claims.py` |
 | Gerade im Vorlauf-Beispiel (acht Container) | Steigung 1/6, Achsenabschnitt −1/4: bei Vorlauf 1 der Wert −1/12, bei Vorlauf 8 der Wert 13/12 | exakt, `test_logit.py` |
 | Sechs Punkte x = −3, −2, −1, 1, 2, 3 mit y = 0, 0, 0, 1, 1, 1: erster Schritt | β = (0; 6/7) (Start bei β = 0 mit Deviance 12 ln 2 = 8,318) | exakt, `test_logit.py` |
