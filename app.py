@@ -216,7 +216,7 @@ a3.plotly_chart(build_exp2_deviance(r2), width="stretch", key="chart_e2_dev")
 a4.plotly_chart(build_exp2_tests(r2), width="stretch", key="chart_e2_tests")
 st.caption(
     "Gerechnet mit stabilen Formeln (w = σ(η) σ(−η), Residuum ohne Auslöschung): kein Wert wird gekappt, kein Schritt halbiert. Der Wald-Test teilt β₁ durch den Standardfehler aus (X'WX)⁻¹; "
-    "der Likelihood-Quotient-Test vergleicht die Deviance mit der des Modells nur mit Achsenabschnitt (ein Freiheitsgrad)."
+    "der Likelihood-Ratio-Test (Likelihood-Quotient) vergleicht die Deviance mit der des Modells nur mit Achsenabschnitt (ein Freiheitsgrad)."
 )
 tab2 = []
 for rg in C.E2_REGELN:
@@ -435,9 +435,9 @@ $$\beta^{+} = \beta + (X'WX)^{-1} X'(y - p) = (X'WX)^{-1} X'W z,$$
 
 also gewichtete kleinste Quadrate auf der Arbeitsantwort $z$. Bei einem 0/1-Merkmal ist der Grenzwert in geschlossener Form $\hat p_g = s_g / n_g$ je Gruppe und $\beta = (\ln \mathrm{Odds}_0,\ \ln \mathrm{OR})$.
 
-**Wald und Likelihood-Quotient.** $z_j = \hat\beta_j / \sqrt{[(X'WX)^{-1}]_{jj}}$; der Likelihood-Quotient ist $D_0 - D$ mit der Deviance $D_0$ des Modells nur mit Achsenabschnitt, bei Gültigkeit der Nullhypothese $\chi^2$ mit $p - 1$ Freiheitsgraden.
+**Wald und Likelihood-Quotient.** $z_j = \hat\beta_j / \sqrt{[(X'WX)^{-1}]_{jj}}$; der Likelihood-Quotient (Statistik des Likelihood-Ratio-Tests) ist $D_0 - D$ mit der Deviance $D_0$ des Modells nur mit Achsenabschnitt, bei Gültigkeit der Nullhypothese $\chi^2$ mit $p - 1$ Freiheitsgraden.
 
-**Trennung.** Die Daten heißen *vollständig getrennt*, wenn ein $\beta$ mit $s_i x_i'\beta > 0$ für alle $i$ existiert, *quasi-vollständig*, wenn nur $\ge$ gilt und für mindestens einen Punkt Gleichheit, sonst *überlappend*
+**Trennung** (englisch Separation). Die Daten heißen *vollständig getrennt*, wenn ein $\beta$ mit $s_i x_i'\beta > 0$ für alle $i$ existiert, *quasi-vollständig*, wenn nur $\ge$ gilt und für mindestens einen Punkt Gleichheit, sonst *überlappend*
 (Begriffe nach Kosmidis und Firth). Dann hat der ML-Schätzer mindestens eine unendliche Komponente. Prüfung hier als Linearprogramm
 
 $$\max_d \ \sum_i s_i x_i' d \quad \text{unter} \quad s_i x_i' d \ge 0,\ \ -1 \le d_j \le 1;$$

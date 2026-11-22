@@ -93,7 +93,7 @@ def build_exp2_tests(res):
     k = np.arange(len(res["p_wald"]))
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=k, y=res["p_wald"], mode="lines", line=dict(color=C.COLOR_RED, width=3), name="Wald-Test", hovertemplate="Schritt %{x}: p = %{y:.4f}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=k, y=res["p_lq"], mode="lines", line=dict(color=C.COLOR_LOGIT, width=3), name="Likelihood-Quotient-Test", hovertemplate="Schritt %{x}: p = %{y:.4f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=k, y=res["p_lq"], mode="lines", line=dict(color=C.COLOR_LOGIT, width=3), name="Likelihood-Ratio-Test", hovertemplate="Schritt %{x}: p = %{y:.4f}<extra></extra>"))
     fig.add_hline(y=0.05, line=dict(color=C.COLOR_GREY, dash="dot"))
     fig.update_xaxes(title_text="IRLS-Schritt")
     fig.update_yaxes(title_text="p-Wert (gepunktet: 0,05)", range=[0, 1.02])
